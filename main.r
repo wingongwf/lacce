@@ -25,6 +25,7 @@ K0 = 2
 pi_ = 0.2
 L = 5
 kappa = 2
+tol_group = 1e-8
 
 # Step 1: Generate observations X and y
 # X: N x T_ x p
@@ -43,18 +44,21 @@ assert_dimensions(y, dim_=c(N, T_))
 gamma = 50
 beta_hat = optimize_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
 assert_dimensions(beta_hat, dim_=c(p, N))
-beta_hat
 
-# Step 4: Compute pooled post-selection LACCE estimates
+# Step 4: Form groups of betas
+group = get_beta_groups(beta_hat)
+assert_dimensions(group, dim_=N)
 
-
-
-# Step 5: Repeat steps 1-4 for n_rep times
-
+# Step 5: Compute pooled post-selection LACCE estimates
 
 
 
-# Step 6: Evaluate the performance
+# Step 6: Repeat steps 1-4 for n_rep times
+
+
+
+
+# Step 7: Evaluate the performance
 
 
 
