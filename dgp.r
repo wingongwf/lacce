@@ -1,5 +1,5 @@
 # This module consists of all the functions for the data generating process.
-# For arrays, we use the following order for dimensions (looping index in brackets):
+# For arrays, we use the following order for dimensions:
 # N > T_ > r > p
 library(MASS)
 source("util.r")

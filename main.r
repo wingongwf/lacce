@@ -2,6 +2,7 @@
 # Kaddoura and Westerlund (2025).
 source("dgp.r")
 source("util.r")
+source("opt.r")
 library(CVXR)
 
 set.seed(1233)
@@ -40,77 +41,9 @@ assert_dimensions(y, dim_=c(N, T_))
 
 # Step 3: Fit the data with given gamma
 gamma = 50
-beta = Variable(c(p, N))   # make p x N so that beta[,i] is a column vector
-
-# Compute matrix that projects out col space of factors: M_F_hat
-Z = array(NA, c(N, T_, p+1))
-for (i in 1:N){
-  stopifnot(nrow(y[i,])==nrow(X[i,,]))
-  Z_i = cbind(y[i,], X[i,,])
-  assert_dimensions(Z_i, dim_=c(T_, p+1))
-  assert_dimensions(Z[i,,], Z_i)
-  Z[i,,] = Z_i
-}
-
-F_hat = apply(Z, c(2,3), mean)   # compute cross-sectional averages
-assert_dimensions(F_hat, dim_=c(T_, p+1))
-
-P_F_hat = F_hat %*% ginv(t(F_hat)%*%F_hat) %*% t(F_hat)
-assert_dimensions(base::diag(T_), P_F_hat)
-M_F_hat = base::diag(T_) - P_F_hat
-
-# Compute total residuals
-total_residuals = 0
-for (i in 1:N){
-  residual_i = sum_squares(M_F_hat %*% (y[i,] - X[i,,] %*% beta[,i]))
-  assert_dimensions(residual_i, dim_=c(1, 1))
-  total_residuals = total_residuals + residual_i
-}
-assert_dimensions(total_residuals, dim_=c(1, 1))
-
-# Compute total penalty
-beta_dot = matrix(NA, p, N)  # same dimension as beta
-for (i in 1:N){
-  beta_dot_i = solve(t(X[i,,]) %*% M_F_hat %*% X[i,,]) %*% t(X[i,,]) %*% M_F_hat %*% y[i,]
-  assert_dimensions(beta_dot_i, dim_=c(p, 1))
-  beta_dot_i = beta_dot_i[,1]
-  assert_dimensions(beta_dot[,i], beta_dot_i)
-  beta_dot[,i] = beta_dot_i
-}
-
-omega = matrix(NA, N, N)
-for (i in 1:N){
-  for (j in 1:N){
-    if (i>=j) next
-    omega_ij = 1 / sqrt(sum((beta_dot[,i] - beta_dot[,j])^2))^kappa
-    stopifnot(length(omega_ij)==1)
-    omega[i,j] = omega_ij
-  }
-}
-stopifnot(sum(!is.na(omega)) == N*(N-1)/2)
-
-total_penalty = 0
-for (i in 1:N){
-  for (j in 1:N){
-    if (i>=j) next
-    penalty_ij = omega[i,j] * p_norm(beta[,i] - beta[,j], 2)
-    assert_dimensions(penalty_ij, dim_=c(1, 1))
-    total_penalty = total_penalty + penalty_ij
-  }
-}
-assert_dimensions(total_residuals, dim_=c(1, 1))
-
-objective_lacce = Minimize(
-  1/T * total_residuals + gamma/N * total_penalty
-)
-
-prob_lacce = Problem(objective_lacce)
-solution_lacce = psolve(prob_lacce)
-status(prob_lacce)
-
-beta_hat = value(beta)
+beta_hat = optimize_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
+assert_dimensions(beta_hat, dim_=c(p, N))
 beta_hat
-
 
 # Step 4: Compute pooled post-selection LACCE estimates
 
