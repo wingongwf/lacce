@@ -1,7 +1,6 @@
 # This module consists of all functions for running simulations
 source("dgp.r")
 source("util.r")
-source("opt.r")
 source("est.r")
 
 run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa){
