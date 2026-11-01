@@ -3,7 +3,6 @@
 source("dgp.r")
 source("util.r")
 source("opt.r")
-library(CVXR)
 
 set.seed(1233)
 
@@ -25,7 +24,6 @@ K0 = 2
 pi_ = 0.2
 L = 5
 kappa = 2
-tol_group = 1e-8
 
 # Step 1: Generate observations X and y
 # X: N x T_ x p
@@ -42,7 +40,7 @@ assert_dimensions(y, dim_=c(N, T_))
 
 # Step 3: Fit the data with given gamma
 gamma = 50
-beta_hat = optimize_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
+beta_hat = estimate_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
 assert_dimensions(beta_hat, dim_=c(p, N))
 
 # Step 4: Form groups of betas

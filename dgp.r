@@ -1,7 +1,6 @@
 # This module consists of all the functions for the data generating process.
 # For arrays, we use the following order for dimensions:
 # N > T_ > r > p
-library(MASS)
 source("util.r")
 
 # Generate factors
@@ -10,7 +9,7 @@ generate_factors = function(r, T_, phi){
   F_ = matrix(NA, nrow=T_+1, ncol=r)
   F_[1,] = f_0    # initialize f_0 for the loop
   for (t in 1:T_){
-    eta_t = mvrnorm(n=1, mu=rep(0,r), Sigma=diag(r))
+    eta_t = MASS::mvrnorm(n=1, mu=rep(0,r), Sigma=diag(r))
     F_[t+1,] = (1-phi)*rep(1,r) + phi*F_[t,] + eta_t
   }
   

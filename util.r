@@ -11,7 +11,7 @@ get_circular_index = function(pos, step, size){
   return(new)
 }
 
-get_beta_groups = function(beta_hat){
+get_beta_groups = function(beta_hat, tol=1e-8){
   group = rep(NA, N)
   group[1] = 1     # initialize first beta into first group
   
@@ -26,7 +26,7 @@ get_beta_groups = function(beta_hat){
       
       # if beta_i is not equal to ANY member, then not group_l
       for (j in 1:ncol(members)){       
-        if (max(abs(beta_hat[,i] - members[,j])) > tol_group){
+        if (max(abs(beta_hat[,i] - members[,j])) > tol){
           is_group_l = FALSE
           break
         }

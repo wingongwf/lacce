@@ -1,4 +1,5 @@
 # This module consists of functions for optimization.
+library(CVXR)
 
 compute_M_F_hat = function(X, y, N, T_, p){
   # Compute matrix that projects out col space of factors: M_F_hat
@@ -14,7 +15,7 @@ compute_M_F_hat = function(X, y, N, T_, p){
   F_hat = apply(Z, c(2,3), mean)   # compute cross-sectional averages
   assert_dimensions(F_hat, dim_=c(T_, p+1))
   
-  P_F_hat = F_hat %*% ginv(t(F_hat)%*%F_hat) %*% t(F_hat)
+  P_F_hat = F_hat %*% MASS::ginv(t(F_hat)%*%F_hat) %*% t(F_hat)
   assert_dimensions(base::diag(T_), P_F_hat)
   M_F_hat = base::diag(T_) - P_F_hat
   
@@ -82,7 +83,7 @@ compute_total_penalty = function(X, y, beta, M_F_hat, N, p, kappa){
   return(total_penalty)
 }
 
-optimize_lacce = function(X, y, gamma, kappa){
+estimate_lacce = function(X, y, gamma, kappa){
   N = dim(X)[1]
   T_ = dim(X)[2]
   p = dim(X)[3]
