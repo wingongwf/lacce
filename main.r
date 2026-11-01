@@ -3,6 +3,7 @@
 source("dgp.r")
 source("util.r")
 source("opt.r")
+source("est.r")
 
 set.seed(1233)
 
@@ -38,17 +39,21 @@ assert_dimensions(y, dim_=c(N, T_))
 
 
 
-# Step 3: Fit the data with given gamma
+# Step 3: Fit the data using LACCE with given gamma
 gamma = 50
-beta_hat = estimate_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
+lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
+beta_hat = lacce_fit$beta_hat
 assert_dimensions(beta_hat, dim_=c(p, N))
 
 # Step 4: Form groups of betas
 group = get_beta_groups(beta_hat)
 assert_dimensions(group, dim_=N)
+K_hat = length(unique(group))
 
-# Step 5: Compute pooled post-selection LACCE estimates
-
+# Step 5: Compute pooled post-selection LACCE estimates: alpha_hat
+alpha_hat = compute_alpha_hat(X=X, y=y, M_F_hat=lacce_fit$M_F_hat,
+                              group=group, N=N, p=p, K_hat=K_hat)
+assert_dimensions(alpha_hat, dim_=c(p, K_hat))
 
 
 # Step 6: Repeat steps 1-4 for n_rep times

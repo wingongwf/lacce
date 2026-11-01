@@ -101,5 +101,5 @@ estimate_lacce = function(X, y, gamma, kappa){
   
   stopifnot(status(prob_lacce)=="optimal")
   beta_hat = value(beta)
-  return(beta_hat)
+  return(list(beta_hat=beta_hat, M_F_hat=M_F_hat))
 }
