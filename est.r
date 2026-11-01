@@ -91,17 +91,30 @@ estimate_lacce = function(X, y, gamma, kappa){
   # Decision variables: make p x N so that beta[,i] is a column vector
   beta = Variable(c(p, N))   
   
+  # Set up the objective function
   M_F_hat = compute_M_F_hat(X=X, y=y, N=N, T_=T_, p=p)
   total_residuals = compute_total_residuals(X=X, y=y, beta=beta, M_F_hat=M_F_hat, N=N)
   total_penalty = compute_total_penalty(X=X, y=y, beta=beta, M_F_hat=M_F_hat, N=N, p=p, kappa=kappa)
+  objective = Minimize(1/T * total_residuals + gamma/N * total_penalty)
   
-  objective_lacce = Minimize(1/T * total_residuals + gamma/N * total_penalty)
-  prob_lacce = Problem(objective_lacce)
-  solution_lacce = psolve(prob_lacce)
-  
-  stopifnot(status(prob_lacce)=="optimal")
+  # Compute LACCE estimates: beta_hat
+  prob = Problem(objective)
+  solution = psolve(prob)
+  stopifnot(status(prob)=="optimal")  # assert convergence
   beta_hat = value(beta)
-  return(list(beta_hat=beta_hat, M_F_hat=M_F_hat))
+  assert_dimensions(beta_hat, dim_=c(p, N))
+  
+  # Form groups of betas
+  group_hat = get_beta_groups(beta_hat)
+  assert_dimensions(group_hat, dim_=N)
+  K_hat = length(unique(group_hat))
+  
+  # Compute pooled post-selection LACCE estimates: alpha_hat
+  alpha_hat = compute_alpha_hat(X=X, y=y, M_F_hat=M_F_hat, group=group_hat,
+                                N=N, p=p, K_hat=K_hat)
+  assert_dimensions(alpha_hat, dim_=c(p, K_hat))
+  
+  return(list(alpha_hat=alpha_hat, group_hat=group_hat))
 }
 
 compute_alpha_hat = function(X, y, M_F_hat, group, N, p, K_hat){
@@ -110,7 +123,7 @@ compute_alpha_hat = function(X, y, M_F_hat, group, N, p, K_hat){
     sum_1 = 0
     sum_2 = 0
     for (i in 1:N){
-      if (group[i] == l){
+      if (group[i] == l){   # TODO: check if integer comparison
         sum_1 = sum_1 + t(X[i,,]) %*% M_F_hat %*% X[i,,]
         sum_2 = sum_2 + t(X[i,,]) %*% M_F_hat %*% y[i,]      
       }
@@ -125,5 +138,42 @@ compute_alpha_hat = function(X, y, M_F_hat, group, N, p, K_hat){
   
   return(alpha_hat)
 }
+
+get_beta_groups = function(beta_hat, tol=1e-8){
+  group = rep(NA, N)
+  group[1] = 1     # initialize first beta into first group
+  
+  for (i in 2:N){
+    is_grouped = FALSE      # flag whether beta_i has been assigned a group
+    collected_groups = unique(group)     # groups gathered so far
+    collected_groups = collected_groups[!is.na(collected_groups)]   # remove NA
+    
+    for (l in collected_groups){
+      is_group_l = TRUE     # flag whether beta_i belongs to group_l
+      members = beta_hat[,which(group==l), drop=FALSE]     # all members of group l
+      
+      # if beta_i is not equal to ANY member, then not group_l
+      for (j in 1:ncol(members)){       
+        if (max(abs(beta_hat[,i] - members[,j])) > tol){
+          is_group_l = FALSE
+          break
+        }
+      }
+      
+      # if beta_i is equal to ALL members, then assign to group_l
+      if (is_group_l){
+        group[i] = l
+        is_grouped = TRUE
+        break
+      }
+    }
+    
+    # if beta_i does not belong to any collected groups, then assign to a new group
+    if (!is_grouped) group[i] = max(collected_groups) + 1
+  }
+  
+  return(group)
+}
+
 
 

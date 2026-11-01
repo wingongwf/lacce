@@ -14,26 +14,16 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa){
   assert_dimensions(y, dim_=c(N, T_))
   
   # Step 2: Fine-tine gamma
-  
+
   
   
   # Step 3: Fit the data using LACCE with given gamma
   gamma = 50
   lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
-  beta_hat = lacce_fit$beta_hat
-  assert_dimensions(beta_hat, dim_=c(p, N))
-  
-  # Step 4: Form groups of betas
-  group_hat = get_beta_groups(beta_hat)
-  assert_dimensions(group_hat, dim_=N)
-  K_hat = length(unique(group_hat))
-  
-  # Step 5: Compute pooled post-selection LACCE estimates: alpha_hat
-  alpha_hat = compute_alpha_hat(X=X, y=y, M_F_hat=lacce_fit$M_F_hat,
-                                group=group_hat, N=N, p=p, K_hat=K_hat)
-  assert_dimensions(alpha_hat, dim_=c(p, K_hat))
-  
-  # Step 6: Compute updated beta estimates based on alpha_hat: beta_tilde
+  alpha_hat = lacce_fit$alpha_hat
+  group_hat = lacce_fit$group_hat
+
+  # Step 4: Compute updated beta estimates: beta_tilde
   beta_tilde = rep(NA, N*p)
   for (i in 1:N){
     beta_tilde_i = alpha_hat[,group_hat[i]]
@@ -42,7 +32,7 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa){
   }
   stopifnot(sum(is.na(beta_tilde))==0)
 
-  # TODO: Step 7: Evaluate the performance
+  # TODO: Step 5: Evaluate the performance
   return(list(group_hat=group_hat, beta_tilde=beta_tilde))
 }
 
