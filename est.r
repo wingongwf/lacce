@@ -1,5 +1,7 @@
 # This module consists of all functions for estimation.
 library(CVXR)
+library(future)
+library(future.apply)
 
 compute_M_F_hat = function(X, y, N, T_, p){
   # Compute matrix that projects out col space of factors: M_F_hat
@@ -101,7 +103,7 @@ estimate_lacce = function(X, y, gamma, kappa){
   prob = Problem(objective)
   solution = psolve(prob)
   stopifnot(status(prob)=="optimal")  # assert convergence
-  beta_hat = value(beta)
+  beta_hat = CVXR::value(beta)
   assert_dimensions(beta_hat, dim_=c(p, N))
   
   # Form groups of betas
@@ -175,12 +177,29 @@ get_beta_groups = function(beta_hat, tol=1e-8){
   return(group)
 }
 
-fit_gamma = function(X, y, kappa, gamma_values){
-  ic_values = rep(NA, length(gamma_values))
-  for (i in 1:length(gamma_values)){
-    ic_values[i] = compute_information_criterion(X=X, y=y, gamma=gamma_values[i], kappa=kappa) 
+fit_gamma = function(X, y, kappa, gamma_values, is_parallel=TRUE, workers=3){
+  if (is_parallel){
+    start = Sys.time()
+    plan(multisession, workers=workers)
+    ic_values = future_lapply(gamma_values, function(gamma){
+      compute_information_criterion(X=X, y=y, gamma=gamma, kappa=kappa)
+    }, future.seed=TRUE)
+    plan(sequential)
+    ic_values = unlist(ic_values)
+    time_used = difftime(Sys.time(), start, units="secs")
+    cat("fit_gamma:is_parallel=TRUE, time_used=",round(time_used,2),"\n", sep="")
+  } else{
+    start = Sys.time()
+    ic_values = rep(NA, length(gamma_values))
+    for (i in 1:length(gamma_values)){
+      start_i = Sys.time()
+      ic_values[i] = compute_information_criterion(X=X, y=y, gamma=gamma_values[i], kappa=kappa)
+      time_used = difftime(Sys.time(), start_i, units="secs")
+      cat("fit_gamma: i=",i,", gamma=",gamma_values[i],", time_used=",round(time_used,2),"\n", sep="")
+    }
+    time_used = difftime(Sys.time(), start, units="secs")
+    cat("fit_gamma:is_parallel=FALSE, time_used=",round(time_used,2),"\n", sep="")
   }
-  
   gamma_best = gamma_values[which.min(ic_values)]
   return(gamma_best)
 }
