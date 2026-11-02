@@ -223,6 +223,6 @@ generate_X_y = function(N, T_, p, r, phi, K0, pi_, L){
   y = compute_y(X=X, beta=beta, F_=F_, lambda=lambda, eps=eps)
   assert_dimensions(y, dim_=c(N, T_))
   
-  return(list(X=X, y=y, group=group))
+  return(list(X=X, y=y, group=group, beta0=beta))
 }
 

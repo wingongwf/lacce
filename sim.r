@@ -7,10 +7,11 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   # Step 1: Generate observations X and y
   # X: N x T_ x p
   # y: N x T_
-  obs = generate_X_y(N=N, T_=T_, p=p, r=r, phi=phi, K0=K0, pi_=pi_, L=L)
-  X = obs$X
-  y = obs$y
-  group = obs$group
+  data = generate_X_y(N=N, T_=T_, p=p, r=r, phi=phi, K0=K0, pi_=pi_, L=L)
+  X = data$X
+  y = data$y
+  group = data$group
+  beta0 = data$beta0
   assert_dimensions(X, dim_=c(N, T_, p))
   assert_dimensions(y, dim_=c(N, T_))
   
@@ -24,25 +25,37 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   alpha_hat = lacce_fit$alpha_hat
   group_hat = lacce_fit$group_hat
   M_F_hat = lacce_fit$M_F_hat
+  
+  # Step 4: Compute updated beta estimates: beta_tilde
+  beta_tilde = rep(NA, N*p)
+  for (i in 1:N){
+    beta_tilde_i = alpha_hat[,group_hat[i]]
+    assert_dimensions(beta_tilde_i, dim_=p)
+    beta_tilde[(p*i-p+1):(p*i)] = beta_tilde_i
+  }
+  stopifnot(sum(is.na(beta_tilde))==0)
+  
+  # Vectorize beta0
+  beta0_vec = rep(NA, N*p)
+  for (i in 1:N){
+    assert_dimensions(beta0[i,], dim_=p)
+    assert_dimensions(beta0_vec[(p*i-p+1):(p*i)], beta0[i,])
+    beta0_vec[(p*i-p+1):(p*i)] = beta0[i,]
+  }
+  stopifnot(sum(is.na(beta0_vec))==0)
 
-  # Step 4: Evaluate the performance
+  # Step 5: Evaluate the performance
   K0 = max(group)
   K_hat = max(group_hat)
-  
-  SSE = 0
-  for (l in 1:K_hat){
-    for (i in 1:N){
-      if (group_hat[i] == l)
-        SSE = SSE + sum((M_F_hat %*% (y[i,] - X[i,,] %*% alpha_hat[,l]))^2)
-    }
-  }
+  assert_dimensions(beta_tilde, beta0_vec)
+  SSE = sum((beta_tilde - beta0_vec)^2)
   
   perf = list(
     is_correct_num_group=(K_hat==K0),
     is_correct_member=all(group_hat==group),
     K_hat=K_hat,
     SSE=SSE,
-    size=N*T_
+    size=length(beta0_vec)
   )
   return(perf)
 }

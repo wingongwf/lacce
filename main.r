@@ -23,7 +23,7 @@ pi_ = 0.2
 L = 5
 kappa = 2
 
-result = run_simulation(n_rep=2, N=N, T_=T_, r=r, p=p, phi=phi, K0=K0,
+result = run_simulation(n_rep=n_rep, N=N, T_=T_, r=r, p=p, phi=phi, K0=K0,
                         pi_=pi_, L=L, kappa=kappa)
 
 
