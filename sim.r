@@ -3,7 +3,7 @@ source("dgp.r")
 source("util.r")
 source("est.r")
 
-run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa){
+run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   # Step 1: Generate observations X and y
   # X: N x T_ x p
   # y: N x T_
@@ -15,7 +15,8 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa){
   assert_dimensions(y, dim_=c(N, T_))
   
   # Step 2: Fine-tine gamma
-  gamma_values = 10^seq(from=-3, to=3, length.out=50)  # follow py file
+  ngamma = ifelse(is_test, 3, 50)
+  gamma_values = 10^seq(from=-3, to=3, length.out=ngamma)  # follow py file
   gamma_best = fit_gamma(X=X, y=y, kappa=kappa, gamma_values=gamma_values)
   
   # Step 3: Fit the data using LACCE with given gamma
@@ -46,26 +47,30 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa){
   return(perf)
 }
 
-run_simulation = function(n_rep, N, T_, r, p, phi, K0, pi_, L, kappa){
+run_simulation = function(n_rep, N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   perf = matrix(NA, n_rep, 5)
   colnames(perf) = c("is_correct_num_group", "is_correct_member", "K_hat", "SSE", "size")
-  for (rep in 6:25){
-    result = run_replication(N=N, T_=T_, r=r, p=p, phi=phi, K0=K0, pi_=pi_, L=L, kappa=kappa)
+  for (rep in 1:n_rep){
+    result = run_replication(N=N, T_=T_, r=r, p=p, phi=phi, K0=K0, pi_=pi_, L=L, kappa=kappa, is_test=is_test)
     perf_rep = c(result$is_correct_num_group, result$is_correct_member, result$K_hat, result$SSE, result$size)
     assert_dimensions(perf[rep,], perf_rep)
     perf[rep,] = perf_rep
   }
   
   # Summarize performance metrics
-  perf_correct_K_hat = perf[which(perf[,"is_correct_num_group"]==1),]
+  perf_correct_K_hat = perf[which(perf[,"is_correct_num_group"]==1),,drop=FALSE]
   NG = 1 - sum(perf[,"is_correct_num_group"])/nrow(perf)
-  MF = 1 - sum(perf_correct_K_hat[,"is_correct_member"])/nrow(perf_correct_K_hat)
+  if (nrow(perf_correct_K_hat) > 0){
+    MF = 1 - sum(perf_correct_K_hat[,"is_correct_member"])/nrow(perf_correct_K_hat)  
+  } else {
+    MF = NA
+  }
   AVE = mean(perf[,"K_hat"])
   MSE = sum(perf[,"SSE"])/sum(perf[,"size"])
   
   metrics = list(NG=NG, MF=MF, AVE=AVE, MSE=MSE)
-  cat("run_simulation: n_rep=",n_rep,", N=",N,", T_=", T_,", r=", r,", p=", p,
-      ", phi=", phi,", K0=", K0,", pi_=", pi_,", L=", L,", kappa=", kappa, ", ",
+  params = mget(names(formals(sys.function())))
+  cat("run_simulation:", list2str(params), ", ",
       list2str(metrics, digits=4), sep="")
   return(metrics)
 }

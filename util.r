@@ -13,8 +13,8 @@ get_circular_index = function(pos, step, size){
 
 list2str = function(x, digits=NULL){
   out = ""
-  val = ifelse(is.null(digits), x[[item]], round(x[[item]], digits))
   for (item in names(x)){
+    val = ifelse(is.null(digits), x[[item]], round(x[[item]], digits))
     out = paste0(out, item, "=", val, ", ")
   }
   out = substring(out, 1, nchar(out)-2) # remove trailing comma
