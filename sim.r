@@ -14,12 +14,11 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa){
   assert_dimensions(y, dim_=c(N, T_))
   
   # Step 2: Fine-tine gamma
-
-  
+  gamma_values = 10^seq(from=-3, to=3, length.out=20)  # follow py file
+  gamma_best = fit_gamma(X=X, y=y, kappa=kappa, gamma_values=gamma_values)
   
   # Step 3: Fit the data using LACCE with given gamma
-  gamma = 50
-  lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
+  lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma_best, kappa=kappa)
   alpha_hat = lacce_fit$alpha_hat
   group_hat = lacce_fit$group_hat
 

@@ -114,7 +114,7 @@ estimate_lacce = function(X, y, gamma, kappa){
                                 N=N, p=p, K_hat=K_hat)
   assert_dimensions(alpha_hat, dim_=c(p, K_hat))
   
-  return(list(alpha_hat=alpha_hat, group_hat=group_hat))
+  return(list(alpha_hat=alpha_hat, group_hat=group_hat, M_F_hat=M_F_hat, K_hat=K_hat))
 }
 
 compute_alpha_hat = function(X, y, M_F_hat, group, N, p, K_hat){
@@ -175,5 +175,38 @@ get_beta_groups = function(beta_hat, tol=1e-8){
   return(group)
 }
 
+fit_gamma = function(X, y, kappa, gamma_values){
+  ic_values = rep(NA, length(gamma_values))
+  for (i in 1:length(gamma_values)){
+    ic_values[i] = compute_information_criterion(X=X, y=y, gamma=gamma_values[i], kappa=kappa) 
+  }
+  
+  gamma_best = gamma_values[which.min(ic_values)]
+  return(gamma_best)
+}
+
+compute_information_criterion = function(X, y, gamma, kappa){
+  lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
+  K_hat = lacce_fit$K_hat
+  group_hat = lacce_fit$group_hat
+  M_F_hat = lacce_fit$M_F_hat
+  alpha_hat = lacce_fit$alpha_hat
+  
+  N = dim(X)[1]
+  double_sum = 0
+  for (l in 1:K_hat){
+    for (i in 1:N){
+      if (group_hat[i] == l)
+        double_sum = double_sum +
+          sum((M_F_hat %*% (y[i,] - X[i,,] %*% alpha_hat[,l]))^2)
+    }
+  }
+  
+  sigma2_hat = 1/(N*T_) * double_sum
+  phi = 0.5 * log(N*T_) / sqrt(N*T_)
+  ic = sigma2_hat + phi * p * K_hat
+  
+  return(ic)
+}
 
 
