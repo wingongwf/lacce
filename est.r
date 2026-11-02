@@ -125,7 +125,7 @@ compute_alpha_hat = function(X, y, M_F_hat, group, N, p, K_hat){
     sum_1 = 0
     sum_2 = 0
     for (i in 1:N){
-      if (group[i] == l){   # TODO: check if integer comparison
+      if (group[i] == l){
         sum_1 = sum_1 + t(X[i,,]) %*% M_F_hat %*% X[i,,]
         sum_2 = sum_2 + t(X[i,,]) %*% M_F_hat %*% y[i,]      
       }

@@ -11,6 +11,16 @@ get_circular_index = function(pos, step, size){
   return(new)
 }
 
+list2str = function(x, digits=NULL){
+  out = ""
+  val = ifelse(is.null(digits), x[[item]], round(x[[item]], digits))
+  for (item in names(x)){
+    out = paste0(out, item, "=", val, ", ")
+  }
+  out = substring(out, 1, nchar(out)-2) # remove trailing comma
+  return(out)
+}
+
 assert_dimensions = function(A, B=NULL, dim_=NULL){
   dim_A = if (is.array(A) || inherits(A, "CVXR::Expression")) dim(A) else length(A)
   

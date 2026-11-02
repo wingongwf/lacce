@@ -52,34 +52,46 @@ generate_slopes_i = function(i, N, p, K0){
   if (K0==2){
     if (i<=0.3*N){
       beta_i = rep(0, p)
+      group_i = 1
     } else{
       beta_i = rep(1, p)
+      group_i = 2
     }
   } else if (K0==3){
     if (i<=0.3*N){
       beta_i = rep(0, p)
+      group_i = 1
     } else if (i<=0.6*N){
       beta_i = rep(1, p)
+      group_i = 2
     } else{
       beta_i = rep(2, p)
+      group_i = 3
     }
   } else{
     stop("K0 must be 2 or 3")
   }
   
-  return(beta_i)
+  return(list(beta_i=beta_i, group_i=group_i))
 }
 
 # Generate slopes for all units
 generate_slopes = function(N, p, K0){
   beta = matrix(NA, N, p)
+  group = rep(NA, N)
   for (i in 1:N){
-    beta_i = generate_slopes_i(i=i, N=N, p=p, K0=K0)
+    slopes_i = generate_slopes_i(i=i, N=N, p=p, K0=K0)
+    beta_i = slopes_i$beta_i
+    group_i = slopes_i$group_i
+    
     assert_dimensions(beta[i,], beta_i)
     beta[i,] = beta_i
+    
+    assert_dimensions(group[i], group_i)
+    group[i] = group_i
   }
   
-  return(beta)
+  return(list(beta=beta, group=group))
 }
 
 # Generate errors
@@ -196,7 +208,9 @@ generate_X_y = function(N, T_, p, r, phi, K0, pi_, L){
   
   # slopes
   # beta: N x p
-  beta = generate_slopes(N=N, p=p, K0=K0)
+  slopes = generate_slopes(N=N, p=p, K0=K0)
+  beta = slopes$beta
+  group = slopes$group
   assert_dimensions(beta, dim_=c(N, p))
   
   # regressors
@@ -209,6 +223,6 @@ generate_X_y = function(N, T_, p, r, phi, K0, pi_, L){
   y = compute_y(X=X, beta=beta, F_=F_, lambda=lambda, eps=eps)
   assert_dimensions(y, dim_=c(N, T_))
   
-  return(list(X=X, y=y))
+  return(list(X=X, y=y, group=group))
 }
 
