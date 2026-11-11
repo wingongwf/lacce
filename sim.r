@@ -19,6 +19,7 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   ngamma = ifelse(is_test, 3, 50)
   gamma_values = 10^seq(from=-3, to=3, length.out=ngamma)  # follow py file
   gamma_best = fit_gamma(X=X, y=y, kappa=kappa, gamma_values=gamma_values)
+  clog(paste0("gamma_best=", round(gamma_best,4)))
   
   # Step 3: Fit the data using LACCE with given gamma
   lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma_best, kappa=kappa)
@@ -34,6 +35,9 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
     beta_tilde[(p*i-p+1):(p*i)] = beta_tilde_i
   }
   stopifnot(sum(is.na(beta_tilde))==0)
+  
+  # Export the beta to a csv file
+  cat(paste0(paste(unlist(beta_tilde), collapse=","), "\n"), file=CSV_BETA, append=TRUE)
   
   # Vectorize beta0
   beta0_vec = rep(NA, N*p)
@@ -63,11 +67,15 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
 run_simulation = function(n_rep, N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   perf = matrix(NA, n_rep, 5)
   colnames(perf) = c("is_correct_num_group", "is_correct_member", "K_hat", "SSE", "size")
+  make_csv_beta(N=N, p=p)   # make csv file for post-LASSO beta estimates
+
   for (rep in 1:n_rep){
     result = run_replication(N=N, T_=T_, r=r, p=p, phi=phi, K0=K0, pi_=pi_, L=L, kappa=kappa, is_test=is_test)
     perf_rep = c(result$is_correct_num_group, result$is_correct_member, result$K_hat, result$SSE, result$size)
     assert_dimensions(perf[rep,], perf_rep)
     perf[rep,] = perf_rep
+    
+    clog(paste0("loop=",rep, "/", n_rep, ", ", list2str(result)))
   }
   
   # Summarize performance metrics
@@ -82,13 +90,13 @@ run_simulation = function(n_rep, N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FA
   MSE = sum(perf[,"SSE"])/sum(perf[,"size"])
   
   metrics = list(NG=NG, MF=MF, AVE=AVE, MSE=MSE)
-  params = mget(names(formals(sys.function())))
-  cat("run_simulation:", list2str(params), ", ",
-      list2str(metrics, digits=4), sep="")
+  
+  clog(paste0("metrics: ", list2str(metrics, digits=4)))
   return(metrics)
 }
 
-
-  
+# Time the functions
+run_simulation = timer(run_simulation)
+run_replication = timer(run_replication)  
 
 

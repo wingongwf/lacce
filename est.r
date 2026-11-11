@@ -2,6 +2,7 @@
 library(CVXR)
 library(future)
 library(future.apply)
+source("util.r")
 
 compute_M_F_hat = function(X, y, N, T_, p){
   # Compute matrix that projects out col space of factors: M_F_hat
@@ -178,7 +179,6 @@ get_beta_groups = function(beta_hat, tol=1e-8){
 }
 
 fit_gamma = function(X, y, kappa, gamma_values, is_parallel=TRUE, workers=3){
-  start = Sys.time()
   if (is_parallel){
     plan(multisession, workers=workers)
     ic_values = future_lapply(gamma_values, function(gamma){
@@ -194,13 +194,12 @@ fit_gamma = function(X, y, kappa, gamma_values, is_parallel=TRUE, workers=3){
       start_i = Sys.time()
       ic_values[i] = compute_information_criterion(X=X, y=y, gamma=gamma_values[i], kappa=kappa)
       time_used = difftime(Sys.time(), start_i, units="secs")
-      cat("fit_gamma: i=",i,", gamma=",gamma_values[i],", time_used=",round(time_used,2),"\n", sep="")
+      clog(paste0("fit_gamma: i=",i,", gamma=",gamma_values[i],", time_used=",round(time_used,2)))
     }
   }
   
   gamma_best = gamma_values[which.min(ic_values)]
-  time_used = difftime(Sys.time(), start, units="secs")
-  cat("fit_gamma:is_parallel=",is_parallel,", time_used=",round(time_used,2),"\n", sep="")
+  clog(paste0("is_parallel=",is_parallel))
   return(gamma_best)
 }
 
@@ -228,4 +227,5 @@ compute_information_criterion = function(X, y, gamma, kappa){
   return(ic)
 }
 
-
+# Time the functions
+fit_gamma = timer(fit_gamma)

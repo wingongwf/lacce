@@ -22,9 +22,15 @@ K0 = 2
 pi_ = 0.2
 L = 5
 kappa = 2
+is_test = FALSE
+
+# file names
+LOG_DATETIME = format(Sys.time(), "%Y%m%d_%H%M%S")
+LOG_FILE = paste0("logs/simulation_", LOG_DATETIME, ".log")
+CSV_BETA = paste0("results/beta_", LOG_DATETIME, ".csv")
 
 result = run_simulation(n_rep=n_rep, N=N, T_=T_, r=r, p=p, phi=phi, K0=K0,
-                        pi_=pi_, L=L, kappa=kappa)
+                        pi_=pi_, L=L, kappa=kappa, is_test=is_test)
 
 
 
