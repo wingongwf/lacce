@@ -54,6 +54,32 @@ timer = function(f){
   }
 }
 
+read_args = function(args){
+  args = sub("^--", "", args)
+  params = strsplit(args, "=", fixed=TRUE)
+  
+  params = setNames(
+    lapply(params, `[`, 2),
+    sapply(params, `[`, 1)
+  )
+  
+  out = list(
+    n_rep=as.integer(params$n_rep),
+    N=as.integer(params$N),
+    T_=as.integer(params$T_),
+    r=as.integer(params$r),
+    p=as.integer(params$p),
+    phi=as.numeric(params$phi),
+    K0=as.integer(params$K0),
+    pi_=as.numeric(params$pi_),
+    L=as.integer(params$L),
+    kappa=as.integer(params$kappa),
+    is_test=as.logical(params$is_test)
+  )
+  
+  return(out)
+}
+
 assert_dimensions = function(A, B=NULL, dim_=NULL){
   dim_A = if (is.array(A) || inherits(A, "CVXR::Expression")) dim(A) else length(A)
   

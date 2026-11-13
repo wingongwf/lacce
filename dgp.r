@@ -98,7 +98,7 @@ generate_slopes = function(N, p, K0){
 # Note that the idiosyncratic errors are weakly serially and cross-sectionally
 # correlated, and so the errors need to be generated together. There is no
 # correlation between variables though.
-generate_errors_k = function(pi_, sigma_values, N, T_){
+generate_errors_k = function(pi_, sigma_values, N, T_, L){
   theta = matrix(NA, nrow=N, ncol=T_)
   for (i in 1:N){
     theta[i,] = rnorm(n=T_, mean=0, sd=sigma_values[i])
@@ -128,10 +128,10 @@ generate_errors_k = function(pi_, sigma_values, N, T_){
 }
 
 # Generate errors in X
-generate_errors_V = function(N, T_, p, pi_, sigma_values){
+generate_errors_V = function(N, T_, p, pi_, sigma_values, L){
   V = array(NA, c(N,T_,p))
   for (k in 1:p){
-    V_k = generate_errors_k(pi_=pi_, sigma_values=sigma_values, N=N, T_=T_)
+    V_k = generate_errors_k(pi_=pi_, sigma_values=sigma_values, N=N, T_=T_, L=L)
     assert_dimensions(V[,,k], V_k)
     V[,,k] = V_k
   }
@@ -140,8 +140,8 @@ generate_errors_V = function(N, T_, p, pi_, sigma_values){
 }
 
 # Generate errors in y
-generate_errors_eps = function(N, T_, pi_, sigma_values){
-  eps = generate_errors_k(pi_=pi_, sigma_values=sigma_values, N=N, T_=T_)
+generate_errors_eps = function(N, T_, pi_, sigma_values, L){
+  eps = generate_errors_k(pi_=pi_, sigma_values=sigma_values, N=N, T_=T_, L=L)
   return(eps)
 }
 
@@ -200,10 +200,10 @@ generate_X_y = function(N, T_, p, r, phi, K0, pi_, L){
   # errors
   # V: N x T_ x p
   # eps: N x T_
-  V = generate_errors_V(N=N, T_=T_, p=p, pi_=pi_, sigma_values=sigma_values)
+  V = generate_errors_V(N=N, T_=T_, p=p, pi_=pi_, sigma_values=sigma_values, L=L)
   assert_dimensions(V, dim_=c(N, T_, p))
   
-  eps = generate_errors_eps(N=N, T_=T_, pi_=pi_, sigma_values=sigma_values)
+  eps = generate_errors_eps(N=N, T_=T_, pi_=pi_, sigma_values=sigma_values, L=L)
   assert_dimensions(eps, dim_=c(N, T_))
   
   # slopes
