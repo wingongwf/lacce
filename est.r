@@ -108,7 +108,7 @@ estimate_lacce = function(X, y, gamma, kappa){
   assert_dimensions(beta_hat, dim_=c(p, N))
   
   # Form groups of betas
-  group_hat = get_beta_groups(beta_hat)
+  group_hat = get_beta_groups(beta_hat=beta_hat, N=N)
   assert_dimensions(group_hat, dim_=N)
   K_hat = length(unique(group_hat))
   
@@ -142,7 +142,7 @@ compute_alpha_hat = function(X, y, M_F_hat, group, N, p, K_hat){
   return(alpha_hat)
 }
 
-get_beta_groups = function(beta_hat, tol=1e-8){
+get_beta_groups = function(beta_hat, N, tol=1e-8){
   group = rep(NA, N)
   group[1] = 1     # initialize first beta into first group
   
@@ -178,11 +178,11 @@ get_beta_groups = function(beta_hat, tol=1e-8){
   return(group)
 }
 
-fit_gamma = function(X, y, kappa, gamma_values, is_parallel=TRUE, workers=3){
+fit_gamma = function(X, y, kappa, gamma_values, T_, p, is_parallel=TRUE, workers=3){
   if (is_parallel){
     plan(multisession, workers=workers)
     ic_values = future_lapply(gamma_values, function(gamma){
-      compute_information_criterion(X=X, y=y, gamma=gamma, kappa=kappa)
+      compute_information_criterion(X=X, y=y, gamma=gamma, kappa=kappa, T_=T_, p=p)
     }, future.seed=TRUE)
     plan(sequential)
     
@@ -192,7 +192,7 @@ fit_gamma = function(X, y, kappa, gamma_values, is_parallel=TRUE, workers=3){
     ic_values = rep(NA, length(gamma_values))
     for (i in 1:length(gamma_values)){
       start_i = Sys.time()
-      ic_values[i] = compute_information_criterion(X=X, y=y, gamma=gamma_values[i], kappa=kappa)
+      ic_values[i] = compute_information_criterion(X=X, y=y, gamma=gamma_values[i], kappa=kappa, T_=T_, p=p)
       time_used = difftime(Sys.time(), start_i, units="secs")
       clog(paste0("fit_gamma: i=",i,", gamma=",gamma_values[i],", time_used=",round(time_used,2)))
     }
@@ -203,7 +203,7 @@ fit_gamma = function(X, y, kappa, gamma_values, is_parallel=TRUE, workers=3){
   return(gamma_best)
 }
 
-compute_information_criterion = function(X, y, gamma, kappa){
+compute_information_criterion = function(X, y, gamma, kappa, T_, p){
   lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma, kappa=kappa)
   K_hat = lacce_fit$K_hat
   group_hat = lacce_fit$group_hat
