@@ -16,8 +16,8 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   assert_dimensions(y, dim_=c(N, T_))
   
   # Step 2: Fine-tine gamma
-  ngamma = ifelse(is_test, 3, 50)
-  gamma_values = 10^seq(from=-3, to=3, length.out=ngamma)  # follow py file
+  ngamma = ifelse(is_test, 3, 20)
+  gamma_values = 10^seq(from=-1, to=3, length.out=ngamma)  # follow py file
   gamma_best = fit_gamma(X=X, y=y, kappa=kappa, gamma_values=gamma_values, T_=T_, p=p)
   clog(paste0("gamma_best=", round(gamma_best,4)))
   

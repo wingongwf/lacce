@@ -104,6 +104,9 @@ estimate_lacce = function(X, y, gamma, kappa){
   prob = Problem(objective)
   solution = psolve(prob)
   stopifnot(status(prob)=="optimal")  # assert convergence
+  num_iters = solver_stats(prob)@num_iters
+  clog(paste0("num_iters=", num_iters))
+  
   beta_hat = CVXR::value(beta)
   assert_dimensions(beta_hat, dim_=c(p, N))
   
@@ -178,28 +181,13 @@ get_beta_groups = function(beta_hat, N, tol=1e-8){
   return(group)
 }
 
-fit_gamma = function(X, y, kappa, gamma_values, T_, p, is_parallel=TRUE, workers=3){
-  if (is_parallel){
-    plan(multisession, workers=workers)
-    ic_values = future_lapply(gamma_values, function(gamma){
-      compute_information_criterion(X=X, y=y, gamma=gamma, kappa=kappa, T_=T_, p=p)
-    }, future.seed=TRUE)
-    plan(sequential)
-    
-    ic_values = unlist(ic_values)
-    
-  } else{
-    ic_values = rep(NA, length(gamma_values))
-    for (i in 1:length(gamma_values)){
-      start_i = Sys.time()
-      ic_values[i] = compute_information_criterion(X=X, y=y, gamma=gamma_values[i], kappa=kappa, T_=T_, p=p)
-      time_used = difftime(Sys.time(), start_i, units="secs")
-      clog(paste0("fit_gamma: i=",i,", gamma=",gamma_values[i],", time_used=",round(time_used,2)))
-    }
-  }
+fit_gamma = function(X, y, kappa, gamma_values, T_, p){
+  ic_values = future_lapply(gamma_values, function(gamma){
+    compute_information_criterion(X=X, y=y, gamma=gamma, kappa=kappa, T_=T_, p=p)
+  }, future.seed=TRUE)
   
+  ic_values = unlist(ic_values)
   gamma_best = gamma_values[which.min(ic_values)]
-  clog(paste0("is_parallel=",is_parallel))
   return(gamma_best)
 }
 

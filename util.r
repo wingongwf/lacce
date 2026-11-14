@@ -11,6 +11,17 @@ get_circular_index = function(pos, step, size){
   return(new)
 }
 
+get_optimal_workers = function(gb_per_worker=1.5, gb_reserved=3){
+  cpu_limit = parallelly::availableCores(omit=1)
+  gb_total = unname(ps::ps_system_memory()[["total"]]) / 1024^3
+  ram_limit = floor((gb_total - gb_reserved) / gb_per_worker)
+  
+  optimal = min(cpu_limit, ram_limit)
+  optimal = max(optimal, 1)   # set at least 1 worker
+  
+  return(optimal)
+}
+
 list2str = function(x, digits=NULL){
   out = ""
   for (item in names(x)){

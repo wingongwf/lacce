@@ -1,5 +1,7 @@
 # In this program, we aim to reproduce the simulation results of
 # Kaddoura and Westerlund (2025).
+library(future)
+library(future.apply)
 source("sim.r")
 source("util.r")
 
@@ -37,8 +39,8 @@ if (interactive()){
   # when running in RStudio console
   params =list(
     n_rep=1,
-    N=50,
-    T_=30,
+    N=30,
+    T_=100,
     r=2,
     p=4,
     phi=0.8,
@@ -55,7 +57,11 @@ if (interactive()){
   params = read_args(args)
 }
 
+workers = get_optimal_workers()
+clog(paste0("start simulation: workers=", workers))
+plan(multisession, workers=workers)
 result = do.call(run_simulation, params)
+plan(sequential)
   
 
 
