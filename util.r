@@ -11,6 +11,34 @@ get_circular_index = function(pos, step, size){
   return(new)
 }
 
+standardize_X = function(X){
+  # X: N x T_ x p
+  N = dim(X)[1]
+  T_ = dim(X)[2]
+  p = dim(X)[3]
+  
+  X_mean_vec = apply(X, 3, base::mean)
+  X_sd_vec = apply(X, 3, stats::sd)
+  
+  # Element-wise standardization
+  X_mean = array(NA, dim=c(N, T_, p))
+  X_sd = array(NA, dim=c(N, T_, p))
+  for (i in 1:N){
+    for (t in 1:T_){
+      assert_dimensions(X_mean[i,t,], X_mean_vec)
+      X_mean[i,t,] = X_mean_vec
+      
+      assert_dimensions(X_sd[i,t,], X_sd_vec)
+      X_sd[i,t,] = X_sd_vec
+    }
+  }
+  
+  assert_dimensions(X, X_mean)
+  assert_dimensions(X, X_sd)
+  X_standardized = (X - X_mean) / X_sd
+  return(list(X_standardized=X_standardized, X_sd=X_sd_vec))
+}
+
 get_optimal_workers = function(gb_per_worker=1.5, gb_reserved=3){
   cpu_limit = parallelly::availableCores(omit=1)
   gb_total = unname(ps::ps_system_memory()[["total"]]) / 1024^3

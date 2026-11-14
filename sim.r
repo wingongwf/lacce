@@ -8,29 +8,43 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   # X: N x T_ x p
   # y: N x T_
   data = generate_X_y(N=N, T_=T_, p=p, r=r, phi=phi, K0=K0, pi_=pi_, L=L)
-  X = data$X
+  X_data = standardize_X(data$X)   
+  X_standardized = X_data$X_standardized  # standardized X
+  X_sd = X_data$X_sd
+  
+  # X_standardized = data$X
   y = data$y
   group = data$group
   beta0 = data$beta0
-  assert_dimensions(X, dim_=c(N, T_, p))
+  assert_dimensions(X_standardized, dim_=c(N, T_, p))
   assert_dimensions(y, dim_=c(N, T_))
   
   # Step 2: Fine-tine gamma
   ngamma = ifelse(is_test, 3, 20)
   gamma_values = 10^seq(from=-1, to=3, length.out=ngamma)  # follow py file
-  gamma_best = fit_gamma(X=X, y=y, kappa=kappa, gamma_values=gamma_values, T_=T_, p=p)
+  gamma_best = fit_gamma(X=X_standardized, y=y, kappa=kappa, gamma_values=gamma_values, T_=T_, p=p)
   clog(paste0("gamma_best=", round(gamma_best,4)))
   
   # Step 3: Fit the data using LACCE with given gamma
-  lacce_fit = estimate_lacce(X=X, y=y, gamma=gamma_best, kappa=kappa)
+  lacce_fit = estimate_lacce(X=X_standardized, y=y, gamma=gamma_best, kappa=kappa)
   alpha_hat = lacce_fit$alpha_hat
   group_hat = lacce_fit$group_hat
   M_F_hat = lacce_fit$M_F_hat
   
+  browser()
+  alpha_hat_back_transformed = matrix(NA, nrow(alpha_hat), ncol(alpha_hat))
+  for (g in 1:ncol(alpha_hat)){
+    assert_dimensions(alpha_hat[,g], X_sd)
+    assert_dimensions(alpha_hat_back_transformed[,g], alpha_hat[,g])
+    alpha_hat_back_transformed[,g] = alpha_hat[,g] / X_sd
+  }
+  
+  # alpha_hat_back_transformed = lacce_fit$alpha_hat
+  
   # Step 4: Compute updated beta estimates: beta_tilde
   beta_tilde = rep(NA, N*p)
   for (i in 1:N){
-    beta_tilde_i = alpha_hat[,group_hat[i]]
+    beta_tilde_i = alpha_hat_back_transformed[,group_hat[i]]
     assert_dimensions(beta_tilde_i, dim_=p)
     beta_tilde[(p*i-p+1):(p*i)] = beta_tilde_i
   }
