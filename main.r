@@ -40,7 +40,7 @@ if (interactive()){
   params =list(
     n_rep=1,
     N=30,
-    T_=100,
+    T_=50,
     r=2,
     p=4,
     phi=0.8,
@@ -52,21 +52,10 @@ if (interactive()){
   )
 } else{
   # when running in terminal
-  # Rscript main.R --r=2 --p=4 --n_rep=2 --phi=0.8 --T_=30 --N=50 --K0=2 --pi_=0.2 --L=5 --kappa=2 --is_test=TRUE
+  # Rscript main.r --r=2 --p=4 --n_rep=1 --phi=0.8 --T_=50 --N=30 --K0=2 --pi_=0.2 --L=5 --kappa=2 --workers=4 --is_test=TRUE
   args = commandArgs(trailingOnly=TRUE)
   params = read_args(args)
 }
 
-workers = get_optimal_workers()
-clog(paste0("start simulation: workers=", workers))
-plan(multisession, workers=workers)
 result = do.call(run_simulation, params)
-plan(sequential)
-  
-
-
-
-
-
-
 

@@ -85,6 +85,7 @@ read_args = function(args){
     pi_=as.numeric(params$pi_),
     L=as.integer(params$L),
     kappa=as.integer(params$kappa),
+    workers=as.integer(params$workers),
     is_test=as.logical(params$is_test)
   )
   

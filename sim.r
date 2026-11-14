@@ -64,7 +64,11 @@ run_replication = function(N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
   return(perf)
 }
 
-run_simulation = function(n_rep, N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FALSE){
+run_simulation = function(n_rep, N, T_, r, p, phi, K0, pi_, L, kappa, workers=NULL, is_test=FALSE){
+  workers = ifelse(is.null(workers), get_optimal_workers(), workers)
+  clog(paste0("workers=", workers))
+  plan(multisession, workers=workers)
+    
   perf = matrix(NA, n_rep, 5)
   colnames(perf) = c("is_correct_num_group", "is_correct_member", "K_hat", "SSE", "size")
   make_csv_beta(N=N, p=p)   # make csv file for post-LASSO beta estimates
@@ -92,6 +96,8 @@ run_simulation = function(n_rep, N, T_, r, p, phi, K0, pi_, L, kappa, is_test=FA
   metrics = list(NG=NG, MF=MF, AVE=AVE, MSE=MSE)
   
   clog(paste0("metrics: ", list2str(metrics, digits=4)))
+  plan(sequential)
+  
   return(metrics)
 }
 
